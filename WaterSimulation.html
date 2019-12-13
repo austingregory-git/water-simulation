@@ -28,16 +28,29 @@ Mouse Controls
 		</script>
 		<script id="WaterVertex" type="shader">
 			uniform float isUnderwater;
+			uniform sampler2D reflection;
+			uniform sampler2D refraction;
+			varying vec2 fTexCoord;
+			
 			void main() 
 			{
 				vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
 				gl_Position = projectionMatrix * modelViewPosition;
+				fTexCoord = uv;
 			}
 		</script>
 		<script id="WaterFragment" type="shader">
 			uniform float isUnderwater;
+			uniform sampler2D reflection;
+			uniform sampler2D refraction;
+			varying vec2 fTexCoord;
+			
 			void main() {
-				gl_FragColor = vec4(isUnderwater, 0.0, 1.0, 1.0);
+				if(isUnderwater < 0.1) {
+					gl_FragColor = texture2D(refraction,fTexCoord);
+				} else {
+					gl_FragColor = texture2D(reflection,fTexCoord);
+				}
 			}
 		</script>
 	</body>
