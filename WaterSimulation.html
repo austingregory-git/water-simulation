@@ -28,29 +28,38 @@ Mouse Controls
 		</script>
 		<script id="WaterVertex" type="shader">
 			uniform float isUnderwater;
+			uniform float hideWater;
 			uniform sampler2D reflection;
 			uniform sampler2D refraction;
 			varying vec2 fTexCoord;
+			varying vec4 clipSpaceCoord;
 			
 			void main() 
 			{
 				vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
 				gl_Position = projectionMatrix * modelViewPosition;
+				clipSpaceCoord = gl_Position;// projectionMatrix * viewMatrix * modelMatrix * vec4(position.x,0.0,position.y,1.0);
 				fTexCoord = uv;
 			}
 		</script>
 		<script id="WaterFragment" type="shader">
 			uniform float isUnderwater;
+			uniform float hideWater;
 			uniform sampler2D reflection;
 			uniform sampler2D refraction;
 			varying vec2 fTexCoord;
+			varying vec4 clipSpaceCoord;
 			
 			void main() {
-				if(isUnderwater < 0.1) {
-					gl_FragColor = texture2D(refraction,fTexCoord);
+				vec2 screenCoord = 0.5+(clipSpaceCoord.xy*(1.0/clipSpaceCoord.w))/2.0;
+				vec2 reflectCoord = vec2(screenCoord.x,1.0-screenCoord.y);
+				gl_FragColor = mix(texture2D(refraction,screenCoord),texture2D(reflection,reflectCoord),0.5);
+				gl_FragColor = mix(gl_FragColor, vec4(0.6,0.7,1.0,1.0),0.1)*(1.0-hideWater);
+				/*if(isUnderwater < 0.1) {
+					gl_FragColor = texture2D(refraction,screenCoord)*(1.0-hideWater);
 				} else {
-					gl_FragColor = texture2D(reflection,fTexCoord);
-				}
+					gl_FragColor = texture2D(reflection,reflectCoord)*(1.0-hideWater);
+				}*/
 			}
 		</script>
 	</body>
