@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<title>Water Simulation</title>
+	</head>
+	<body>
+<p align="center">
+		<canvas id="theCanvas" width="900" height="600">
+    Please use a browser that supports "canvas"
+    </canvas>
+</p>
+
+	<p>
+Mouse Controls
+<ul style="list-style:none;width:auto">
+<li>Left - Orbit about center
+<li>Right, Ctrl+Left, Shift+Left, Alt+Left - Shift center
+<li>Middle/Scroll - Zoom
+</ul>
+
+	<script src="util/three.js"></script>
+		<script src="util/OBJLoader.js"></script>
+		<script src="WaterSimulation.js"></script>
+		<script src="util/cs336util.js"></script>
+		<script src="util/CS336Object.js"></script>
+		<script src="util/OrbitControls.js"></script>
+		<script>
+			window.onload=start;
+		</script>
+	</body>
+</html>
