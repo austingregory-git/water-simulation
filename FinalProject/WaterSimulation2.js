@@ -1,16 +1,11 @@
-//
-// Skybox using Three.js.
-//
-				  
-var imageNames = [
-                  "Stars.jpg",
-                  "Stars.jpg",
-                  "Stars.jpg",
-                  "Stars.jpg",
-                  "Stars.jpg",
-                  "Stars.jpg"
-                  ];
-				  
+
+var loader = new THREE.OBJLoader();
+var texLoader = new THREE.TextureLoader();
+
+var refractionBuffer = new THREE.WebGLRenderTarget(1800, 1200);
+var reflectionBuffer = new THREE.WebGLRenderTarget(1800, 1200);
+refractionBuffer.texture.generateMipmaps = true;
+reflectionBuffer.texture.generateMipmaps = true;
 
 var axis = 'z';
 var paused = false;
@@ -18,188 +13,67 @@ var camera;
 
 var kirbyTorsoDummy;
 var waddleDeeTorsoDummy;
+//var kirbyArmDummy1;
+//var kirbyArmDummy2;
 var kirbyArmDummy;
 var kirbyFootDummy1
 var kirbyFootDummy2;
 
 var ribbon;
 
-var refractionBuffer = new THREE.WebGLRenderTarget(1800, 1200);
-var reflectionBuffer = new THREE.WebGLRenderTarget(1800, 1200);
-refractionBuffer.texture.generateMipmaps = true;
-reflectionBuffer.texture.generateMipmaps = true;
-
-var gl;
-var clipPlane;
-
-
-
-
-//translate keypress events to strings
-//from http://javascript.info/tutorial/keyboard-events
-function getChar(event) {
-if (event.which == null) {
- return String.fromCharCode(event.keyCode) // IE
-} else if (event.which!=0 && event.charCode!=0) {
- return String.fromCharCode(event.which)   // the rest
-} else {
- return null // special key
-}
-}
-
-function cameraControl(c, ch)
+async function start()
 {
-  var distance = c.position.length();
-  var q, q2;
-
-  switch (ch)
-  {
-  // camera controls
-  case 'w':
-    c.translateZ(-0.1);
-    return true;
-  case 'a':
-    c.translateX(-0.1);
-    return true;
-  case 's':
-    c.translateZ(0.1);
-    return true;
-  case 'd':
-    c.translateX(0.1);
-    return true;
-  case 'r':
-    c.translateY(0.1);
-    return true;
-  case 'f':
-    c.translateY(-0.1);
-    return true;
-  case 'j':
-    // need to do extrinsic rotation about world y axis, so multiply camera's quaternion
-    // on left
-    q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0),  5 * Math.PI / 180);
-    q2 = new THREE.Quaternion().copy(c.quaternion);
-    c.quaternion.copy(q).multiply(q2);
-    return true;
-  case 'l':
-    q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0),  -5 * Math.PI / 180);
-    q2 = new THREE.Quaternion().copy(c.quaternion);
-    c.quaternion.copy(q).multiply(q2);
-    return true;
-  case 'i':
-    // intrinsic rotation about camera's x-axis
-    c.rotateX(5 * Math.PI / 180);
-    return true;
-  case 'k':
-    c.rotateX(-5 * Math.PI / 180);
-    return true;
-  case 'O':
-    c.lookAt(new THREE.Vector3(0, 0, 0));
-    return true;
-  case 'S':
-    c.fov = Math.min(80, c.fov + 5);
-    c.updateProjectionMatrix();
-    return true;
-  case 'W':
-    c.fov = Math.max(5, c.fov  - 5);
-    c.updateProjectionMatrix();
-    return true;
-
-    // alternates for arrow keys
-  case 'J':
-    //this.orbitLeft(5, distance)
-    c.translateZ(-distance);
-    q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0),  5 * Math.PI / 180);
-    q2 = new THREE.Quaternion().copy(c.quaternion);
-    c.quaternion.copy(q).multiply(q2);
-    c.translateZ(distance);
-    return true;
-  case 'L':
-    //this.orbitRight(5, distance)
-    c.translateZ(-distance);
-    q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0),  -5 * Math.PI / 180);
-    q2 = new THREE.Quaternion().copy(c.quaternion);
-    c.quaternion.copy(q).multiply(q2);
-    c.translateZ(distance);
-    return true;
-  case 'I':
-    //this.orbitUp(5, distance)
-    c.translateZ(-distance);
-    c.rotateX(-5 * Math.PI / 180);
-    c.translateZ(distance);
-    return true;
-  case 'K':
-    //this.orbitDown(5, distance)
-    c.translateZ(-distance);
-    c.rotateX(5 * Math.PI / 180);
-    c.translateZ(distance);
-    return true;
+	var scene = new THREE.Scene();
+	var sceneWithoutWater = new THREE.Scene();
+	var bgScene = new THREE.Scene();
 	
-	case '1':
-    //torsoDummy.rotation.y += 15 * Math.PI / 180;
-    kirbyTorsoDummy.rotateY(15 * Math.PI / 180);
-    break;
-  case '2':
-    kirbyTorsoDummy.rotateY(-15 * Math.PI / 180);
-    break;
-  case '3':
-    //shoulderDummy.rotation.x -= 15 * Math.PI / 180;
-    kirbyFootDummy1.rotateX(-15 * Math.PI / 180);
-    break;
-  case '4':
-    kirbyFootDummy2.rotateX(15 * Math.PI / 180);
-    break;
-  case '5':
-    //armDummy.rotation.x -= 15 * Math.PI / 180;
-    kirbyArmDummy.rotateX(-15 * Math.PI / 180);
-    break;
+	var ourCanvas = document.getElementById('theCanvas');
 	
-    default:
-      return;
-  }
-  return false;
-}
-
-function handleKeyPress(event)
-{
-  var ch = getChar(event);
-  if (cameraControl(camera, ch)) return;
-}
-
-function start()
-{ 
-
-  //theModel = await loadOBJPromise(modelFilename);
-  
-  var ourCanvas = document.getElementById('theCanvas');
-  var renderer = new THREE.WebGLRenderer({canvas: ourCanvas});
-  
-  //var clipPlaneLocation = gl.getUniformLocation(clipPlane, "clipPlane");
-  //gl.useProgram(clipPlane);
-  //gl.uniform4f(clipPlaneLocation, 0.0, -1.0, 0.0, 15.0);
-  
-  
-  window.onkeypress = handleKeyPress;
-  
-  var underwater = false;
-  
-  var scene = new THREE.Scene();
-  var sceneWithoutWater = new THREE.Scene();
-  var bgScene = new THREE.Scene();
-  
-  camera = new THREE.PerspectiveCamera( 45, 1.5, 0.1, 1000 );
-  camera.position.x = 0;
-  camera.position.y = 5;
-  camera.position.z = 20;
-  camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-  // load the six images
-  var ourCubeMap = new THREE.CubeTextureLoader().load( imageNames );
-
-  // this is too easy, don't need a mesh or anything
-  scene.background = ourCubeMap;
-
-  var url = "Kirby_Face.png";
-  var planeURL = "DuDvMap.png";
+	var renderer = new THREE.WebGLRenderer({canvas: ourCanvas});
+	//renderer.setClearColor(0x000000);
+	renderer.autoClearColor = false;
+	
+	var underwater = false;
+	
+	var camera = new THREE.PerspectiveCamera(45, 1.5, 0.1, 1000 );
+	camera.rotation.order = "YZX";
+	camera.position.x = 60;
+	camera.position.y = 40;
+	camera.position.z = 60;
+	camera.lookAt(new THREE.Vector3(0, 0, 0));
+	
+	console.log(camera);
+	
+	var waterWidth = 30;
+	var waterLength = 30;
+	
+	var dudvMap = texLoader.load("images/waterDUDV.png");
+	console.log(dudvMap);
+	
+	var waterUniforms = {
+		isUnderwater: {value: 0},
+		reflection: { type: 't', value: reflectionBuffer.texture },
+		refraction: { type: 't', value: refractionBuffer.texture },
+		dudvMap: { type: 't', value: dudvMap },
+		hideWater: {value: 1},
+		waterOffset: {value: 1}
+	}
+	
+	var WaterMaterial = new THREE.ShaderMaterial( {
+		fragmentShader: document.getElementById("WaterFragment").textContent,
+		vertexShader: document.getElementById("WaterVertex").textContent,
+		side: THREE.DoubleSide,
+		uniforms: waterUniforms
+	});
+	
+	var water = new THREE.Mesh(new THREE.PlaneGeometry(waterWidth,waterLength,1),WaterMaterial);
+	water.position.y = -1;
+	water.rotateX(Math.PI/2);
+	
+	scene.add(water);
+	
+	 var url = "Kirby_Face.png";
+  var planeURL = "kirby64picnic.jpg";
   var waddleDeeURL = "Waddle_Dee_Face.png";
   var ribbonURL = "Ribbon_Face.png";
 
@@ -214,35 +88,6 @@ function start()
   
   var loader = new THREE.TextureLoader();
   var ribbonTexture = loader.load(ribbonURL);
-  
-  /*var loader = new THREE.ObjectLoader();
-  loader.load(modelFilename, function(obj) {
-	  scene.add(obj);
-  });*/
-  
-  var waterWidth = 200;
-  var waterLength = 200;
-	
-
-  var waterUniforms = {
-	isUnderwater: {value: 0},
-	reflection: { type: 't', value: reflectionBuffer.texture },
-	refraction: { type: 't', value: refractionBuffer.texture }
-  }
-	
-  var WaterMaterial = new THREE.ShaderMaterial( {
-	fragmentShader: document.getElementById("WaterFragment").textContent,
-	vertexShader: document.getElementById("WaterVertex").textContent,
-	side: THREE.DoubleSide,
-	uniforms: waterUniforms
-  });
-	
-  var water = new THREE.Mesh(new THREE.PlaneGeometry(waterWidth,waterLength,1),WaterMaterial);
-  water.position.y = -1;
-  water.rotateX(Math.PI/2);
-  
-  scene.add(water);
-  
 
   // create a green cube
   var geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -255,12 +100,6 @@ function start()
   var plane = new THREE.PlaneGeometry(30, 30);
   var planeMaterial = new THREE.MeshLambertMaterial({map: planeTexture, side: THREE.DoubleSide});
   var ribbonMaterial = new THREE.MeshLambertMaterial( { map: ribbonTexture } );
-
-  var floor = new THREE.Mesh(plane, planeMaterial);
-  floor.rotation.x = THREE.Math.degToRad(90);
-  floor.position.set(0, -1, 0);
-  
-  //scene.add(floor);
   
   ribbon = new THREE.Mesh(geometry, ribbonMaterial);
   ribbon.position.set(5, 5, 5);
@@ -351,16 +190,54 @@ function start()
   foot2.position.set(0.5, -1, 0);
   // add torso dummy to the scene
   scene.add( waddleDeeTorsoDummy );
+	
+	var skyboxTexture = texLoader.load("images/skybox.jpg");
+	skyboxTexture.magFilter = THREE.LinearFilter;
+	skyboxTexture.minFilter = THREE.LinearFilter;
+	
+	var skyboxMaterial = new THREE.ShaderMaterial({
+		fragmentShader: THREE.ShaderLib.equirect.fragmentShader,
+		vertexShader: THREE.ShaderLib.equirect.vertexShader,
+		uniforms: THREE.ShaderLib.equirect.uniforms,
+		depthWrite:false,
+		side: THREE.BackSide,
+	});
+	skyboxMaterial.uniforms.tEquirect.value = skyboxTexture;
+	
+	var bgMesh = new THREE.Mesh(new THREE.BoxBufferGeometry(2,2,2), skyboxMaterial);
+	
+	bgScene.add(bgMesh);
+	
+	var cube = new THREE.Mesh(new THREE.BoxGeometry(10,10,10), new THREE.MeshPhysicalMaterial( { color: 0x00ff00, emissive: 0x008800,roughness:0.80,metalness:.41}));
+	
+	cube.position.x = 40;
+	cube.position.y = 20;
+	
+	scene.add(cube);
+	
+	
+	/*var light = new THREE.HemisphereLight( 0x0000ff, 0x00ff00, 0.3 ); 
+	//scene.add(light);
+	light = new THREE.DirectionalLight( 0xffffff, 0.5 );
+	//light = new THREE.DirectionalLight( 0xffffff, 0.0 );
+	light.position.x = -40;
+	light.position.y = 30;
+	light.position.z = -20;
+	scene.add(light);*/
+	
+	/*var light = new THREE.PointLight(0xffffff, 1.0);
+	light.position.set(2, 3, 5);
+	scene.add(light);*/
 
-
-  var light = new THREE.PointLight(0xffffff, 1.0);
-  light.position.set(2, 3, 5);
-  scene.add(light);
-
-  light = new THREE.AmbientLight(0x555555);
-  scene.add(light);
-  
-  //texture.magFilter = THREE.NearestFilter;
+	var light = new THREE.AmbientLight(0x555555);
+	scene.add(light);
+	
+	console.log(sceneWithoutWater);
+	console.log(scene);
+	
+	var upDownPlanes = [new THREE.Plane( new THREE.Vector3( 0, 1, 0 ), -1 ),new THREE.Plane( new THREE.Vector3( 0, - 1, 0 ), 1 )];
+	
+	  //texture.magFilter = THREE.NearestFilter;
   texture.magFilter = THREE.LinearFilter;
   //texture.minFilter = THREE.NearestFilter;
   texture.minFilter = THREE.LinearFilter;
@@ -368,13 +245,6 @@ function start()
   //texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.x = -2;
   //texture.repeat.y = -1;
-  
-  //texture.magFilter = THREE.NearestFilter;
-  planeTexture.magFilter = THREE.LinearFilter;
-  //texture.minFilter = THREE.NearestFilter;
-  planeTexture.magFilter = THREE.LinearFilter;
-  
-  //vertexBuffer = createAndLoadBuffer(theModel.vertices);
   
   //texture.magFilter = THREE.NearestFilter;
   waddleDeeTexture.magFilter = THREE.LinearFilter;
@@ -385,46 +255,65 @@ function start()
   //texture.wrapT = THREE.RepeatWrapping;
   waddleDeeTexture.repeat.x = -2;
   //texture.repeat.y = -1;
-  
-  var renderToBuffers = function() {
-		 var distance = 2 * (camera.position.y-water.position.y);
+	
+	 var renderToBuffers = function() {
+		var reflectPlane = new THREE.Plane( new THREE.Vector3( 0, (underwater) ? -1 : 1, 0 ), (underwater) ? 1 : -1 );
+		var refractPlane = new THREE.Plane( new THREE.Vector3( 0, (underwater) ? 1 : -1, 0 ), (underwater) ? -1 : 1 );
+		
+		waterUniforms.hideWater.value=1;
+		var distance = 2 * (camera.position.y-water.position.y);
+		
 		//Switches to reflect
 		camera.position.y-=distance;
 		camera.rotation.x = -camera.rotation.x;
-		//bgMesh.position.copy(camera.position);
-		renderer.setRenderTarget(refractionBuffer);
+		bgMesh.position.copy(camera.position);
+		renderer.setRenderTarget(reflectionBuffer);
 		renderer.render(bgScene, camera);
-		renderer.render(sceneWithoutWater, camera);
+		renderer.clippingPlanes = [reflectPlane];
+		renderer.render(scene, camera);
 		
 		//Switches to refract
 		camera.position.y+=distance
 		camera.rotation.x = -camera.rotation.x;
-		//bgMesh.position.copy(camera.position);
-		renderer.setRenderTarget(reflectionBuffer);
+		bgMesh.position.copy(camera.position);
+		renderer.setRenderTarget(refractionBuffer);
 		renderer.render(bgScene, camera);
-		renderer.render(sceneWithoutWater, camera);
+		renderer.clippingPlanes = [refractPlane];
+		renderer.render(scene, camera);
 		
+		renderer.clippingPlanes = [new THREE.Plane( new THREE.Vector3( 0, 0, 0 ), 0 )];
 		renderer.setRenderTarget(null);
-  }
-  
-  var render = function () {
-    requestAnimationFrame( render );
+		 waterUniforms.hideWater.value=0;
+	} 
 	
-	underwater = (camera.position.y < water.position.y) && (camera.position.x > water.position.x-waterWidth/2 && camera.position.x < water.position.x+waterWidth/2) && (camera.position.z > water.position.z-waterLength/2 && camera.position.z < water.position.z+waterLength/2);
-	waterUniforms.isUnderwater.value = (underwater) ? 1 : 0;
-	//clipPlane = Vector4f(0, -1, 0, 15);
-    renderToBuffers();
+	var clock = new THREE.Clock(true);
 	
-	//renderer.render(scene, camera, clipPlane);
-	renderer.render(scene, camera);
-	animate();
-  };
-  
-  function animate() {
+	function animate() {
 	  var time = Date.now()*0.0005;
 	  ribbon.position.x = Math.cos(time)*10;
 	  ribbon.position.z = Math.cos(time)*10;
   }
-
-  render();
+	
+	var render = function() {
+		requestAnimationFrame( render );
+		// Renders skybox
+		bgMesh.position.copy(camera.position);
+		renderer.render(bgScene, camera);
+		
+		underwater = (camera.position.y < water.position.y) //&& (camera.position.x > water.position.x-waterWidth/2 && camera.position.x < water.position.x+waterWidth/2) && (camera.position.z > water.position.z-waterLength/2 && camera.position.z < water.position.z+waterLength/2);
+		waterUniforms.isUnderwater.value = (underwater) ? 1 : 0;
+		waterUniforms.waterOffset.value+=0.03*clock.getDelta();
+		waterUniforms.waterOffset.value%=1;
+		
+		renderToBuffers();
+		
+		// Final Render
+		renderer.render(scene, camera);
+		animate();
+	}
+	
+	var controls = new THREE.OrbitControls(camera,ourCanvas);
+	
+	render();
+	
 }
