@@ -4,6 +4,7 @@ var texLoader = new THREE.TextureLoader();
 
 var refractionBuffer = new THREE.WebGLRenderTarget(1800, 1200);
 var reflectionBuffer = new THREE.WebGLRenderTarget(1800, 1200);
+var underwaterBuffer = new THREE.WebGLRenderTarget(900,600);
 refractionBuffer.texture.generateMipmaps = true;
 reflectionBuffer.texture.generateMipmaps = true;
 
@@ -288,6 +289,25 @@ async function start()
 	
 	var clock = new THREE.Clock(true);
 	
+	var underwaterScene = new THREE.Scene();
+	var underwaterCamera = new THREE.PerspectiveCamera(64, 1.5, 0.1, 1000 );
+	
+	underwaterCamera.position.z = 5;
+	
+	var underwaterMaterial = new THREE.ShaderMaterial( {
+		fragmentShader: document.getElementById("underwaterFragment").textContent,
+		vertexShader: document.getElementById("underwaterVertex").textContent,
+		uniforms: {scene:{value: underwaterBuffer.texture }}
+	});
+	
+	var underwaterPlane = new THREE.PlaneGeometry(10,10/1.5);
+	
+	var underwaterObject = new THREE.Mesh(underwaterPlane,underwaterMaterial);
+	
+	underwaterObject.position.set(0,0,0);
+	
+	underwaterScene.add(underwaterObject);
+	
 	function animate() {
 	  var time = Date.now()*0.0005;
 	  ribbon.position.x = Math.cos(time)*10;
@@ -308,7 +328,16 @@ async function start()
 		renderToBuffers();
 		
 		// Final Render
-		renderer.render(scene, camera);
+		if(underwater) {
+			renderer.setRenderTarget(underwaterBuffer);
+			renderer.render(bgScene, camera);
+			renderer.render(scene, camera);
+			renderer.setRenderTarget(null);
+			renderer.render(underwaterScene,underwaterCamera);
+		} else {
+			renderer.render(bgScene, camera);
+			renderer.render(scene, camera);
+		}
 		animate();
 	}
 	
