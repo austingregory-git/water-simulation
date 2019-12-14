@@ -41,7 +41,8 @@ async function start()
 		reflection: { type: 't', value: reflectionBuffer.texture },
 		refraction: { type: 't', value: refractionBuffer.texture },
 		dudvMap: { type: 't', value: dudvMap },
-		hideWater: {value: 1}
+		hideWater: {value: 1},
+		waterOffset: {value: 1}
 	}
 	
 	var WaterMaterial = new THREE.ShaderMaterial( {
@@ -124,6 +125,8 @@ async function start()
 		 waterUniforms.hideWater.value=0;
 	} 
 	
+	var clock = new THREE.Clock(true);
+	
 	var render = function() {
 		requestAnimationFrame( render );
 		// Renders skybox
@@ -132,6 +135,8 @@ async function start()
 		
 		underwater = (camera.position.y < water.position.y) //&& (camera.position.x > water.position.x-waterWidth/2 && camera.position.x < water.position.x+waterWidth/2) && (camera.position.z > water.position.z-waterLength/2 && camera.position.z < water.position.z+waterLength/2);
 		waterUniforms.isUnderwater.value = (underwater) ? 1 : 0;
+		waterUniforms.waterOffset.value+=0.03*clock.getDelta();
+		waterUniforms.waterOffset.value%=1;
 		
 		renderToBuffers();
 		
