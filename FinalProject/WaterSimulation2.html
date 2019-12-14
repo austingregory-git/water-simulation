@@ -1,0 +1,64 @@
+<html>
+	<head>
+		<title>Skybox with Three.js app</title>
+	</head>
+	<body>
+
+		<canvas id="theCanvas" width="600" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+
+<p>
+Camera controls:
+<ul style="list-style:none;">
+<li>w, a, s, d - move forward, left, back, right
+<li>r, f - move up, down
+<li>i, j, k, l - look up, left, down, right
+<li>I, J, K, L - orbit down, right, up, left
+<li>O - face origin
+<li>p - put camera at origin
+<li>W - decrease fov
+<li>S - increase fov
+</ul>
+
+	<script src="three.js"></script>
+
+		<script src="WaterSimulation2.js"></script>
+		<script src="OBJLoader.js"></script>
+		<script src="cs336util.js"></script>
+		<script src="CS336Object.js"></script>
+		<script>window.onload = start</script>
+		
+		<script id="WaterVertex" type="shader">
+			uniform float isUnderwater;
+			uniform sampler2D reflection;
+			uniform sampler2D refraction;
+			varying vec2 fTexCoord;
+			//const vec4 clipPlane = vec4(0, -1, 0, 15);
+			uniform vec4 clipPlane;
+			
+			void main() 
+			{
+				vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+				//gl_ClipDistance[0] = dot(modelViewPosition, clipPosition);
+				gl_Position = projectionMatrix * modelViewPosition;
+				fTexCoord = uv;
+			}
+		</script>
+		<script id="WaterFragment" type="shader">
+			uniform float isUnderwater;
+			uniform sampler2D reflection;
+			uniform sampler2D refraction;
+			varying vec2 fTexCoord;
+			
+			void main() {
+				if(isUnderwater < 0.1) {
+					gl_FragColor = texture2D(refraction,fTexCoord);
+				} else {
+					gl_FragColor = texture2D(reflection,fTexCoord);
+				}
+			}
+		</script>
+	</body>
+</html>
