@@ -33,10 +33,14 @@ async function start()
 	var waterWidth = 200;
 	var waterLength = 200;
 	
+	var dudvMap = texLoader.load("images/waterDUDV.png");
+	console.log(dudvMap);
+	
 	var waterUniforms = {
 		isUnderwater: {value: 0},
 		reflection: { type: 't', value: reflectionBuffer.texture },
 		refraction: { type: 't', value: refractionBuffer.texture },
+		dudvMap: { type: 't', value: dudvMap },
 		hideWater: {value: 1}
 	}
 	

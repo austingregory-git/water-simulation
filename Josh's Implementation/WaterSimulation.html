@@ -19,10 +19,8 @@ Mouse Controls
 
 	<script src="util/three.js"></script>
 		<script src="util/OBJLoader.js"></script>
-		<script src="WaterSimulation.js"></script>
-		<script src="util/cs336util.js"></script>
-		<script src="util/CS336Object.js"></script>
 		<script src="util/OrbitControls.js"></script>
+		<script src="WaterSimulation.js"></script>
 		<script>
 			window.onload=start;
 		</script>
@@ -31,15 +29,18 @@ Mouse Controls
 			uniform float hideWater;
 			uniform sampler2D reflection;
 			uniform sampler2D refraction;
+			uniform sampler2D dudvMap;
 			varying vec2 fTexCoord;
 			varying vec4 clipSpaceCoord;
+			varying float tiling;
 			
 			void main() 
 			{
+				tiling = 3.0;
 				vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
 				gl_Position = projectionMatrix * modelViewPosition;
 				clipSpaceCoord = gl_Position;// projectionMatrix * viewMatrix * modelMatrix * vec4(position.x,0.0,position.y,1.0);
-				fTexCoord = uv;
+				fTexCoord = uv * tiling;
 			}
 		</script>
 		<script id="WaterFragment" type="shader">
@@ -47,20 +48,29 @@ Mouse Controls
 			uniform float hideWater;
 			uniform sampler2D reflection;
 			uniform sampler2D refraction;
+			uniform sampler2D dudvMap;
 			varying vec2 fTexCoord;
 			varying vec4 clipSpaceCoord;
+			varying float tiling;
+			
+			const float offsetFactor = 0.01;
 			
 			void main() {
+				vec2 newTexCoord = fTexCoord - floor(fTexCoord);
+				vec2 offsetCoords = offsetFactor*(2.0*(texture2D(dudvMap,newTexCoord).rg)-1.0);
 				vec2 screenCoord = 0.5+(clipSpaceCoord.xy*(1.0/clipSpaceCoord.w))/2.0;
+				screenCoord = clamp(screenCoord+offsetCoords,0.0,1.0);
 				vec2 reflectCoord = vec2(screenCoord.x,1.0-screenCoord.y);
 				gl_FragColor = mix(texture2D(refraction,screenCoord),texture2D(reflection,reflectCoord),0.5);
 				gl_FragColor = mix(gl_FragColor, vec4(0.6,0.7,1.0,1.0),0.1)*(1.0-hideWater);
+				//gl_FragColor = mix(gl_FragColor, texture2D(dudvMap,newTexCoord), 0.5);
 				/*if(isUnderwater < 0.1) {
 					gl_FragColor = texture2D(refraction,screenCoord)*(1.0-hideWater);
 				} else {
 					gl_FragColor = texture2D(reflection,reflectCoord)*(1.0-hideWater);
 				}*/
 			}
+			
 		</script>
 	</body>
 </html>
