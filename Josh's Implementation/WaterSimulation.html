@@ -58,8 +58,8 @@ Mouse Controls
 			
 			void main() {
 				vec2 newTexCoord = fTexCoord - floor(fTexCoord);
-				vec2 offsetCoords1 = offsetFactor*(2.0*(texture2D(dudvMap,vec2(newTexCoord.x+waterOffset,newTexCoord.y)).rg)-1.0);
-				vec2 offsetCoords2 = offsetFactor*(2.0*(texture2D(dudvMap,newTexCoord-waterOffset).rg)-1.0);
+				vec2 offsetCoords1 = offsetFactor*(2.0*(texture2D(dudvMap,vec2(newTexCoord.x+waterOffset-floor(newTexCoord.x+waterOffset),newTexCoord.y)).rg)-1.0);
+				vec2 offsetCoords2 = offsetFactor*(2.0*(texture2D(dudvMap,newTexCoord-waterOffset - floor(newTexCoord-waterOffset)).rg)-1.0);
 				vec2 offsetCoords= offsetCoords1+offsetCoords2;
 				vec2 screenCoord = 0.5+(clipSpaceCoord.xy*(1.0/clipSpaceCoord.w))/2.0;
 				screenCoord = clamp(screenCoord+offsetCoords,0.0,1.0);
